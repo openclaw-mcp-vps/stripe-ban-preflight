@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0d1117;
+  --surface: #161b22;
+  --surface-muted: #11161d;
+  --foreground: #e6edf3;
+  --muted: #9ea7b3;
+  --accent: #58a6ff;
+}
+
+* {
+  border-color: rgb(255 255 255 / 0.08);
+}
+
+html,
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  font-family: var(--font-space-grotesk), "Segoe UI", sans-serif;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-ibm-plex-mono), "SFMono-Regular", Menlo, monospace;
+}
+
+::selection {
+  background-color: rgb(88 166 255 / 0.35);
+  color: #ffffff;
+}
