@@ -1,109 +1,147 @@
-import crypto from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 import { lemonSqueezySetup } from "@lemonsqueezy/lemonsqueezy.js";
+import { z } from "zod";
 
-import type { PurchaseRecord } from "@/lib/db";
+import { readJsonFile, writeJsonFile } from "@/lib/file-store";
 
-let sdkConfigured = false;
+const ENTITLEMENTS_FILE = "entitlements.json";
 
-export function setupLemonSqueezy() {
-  const apiKey = process.env.LEMON_SQUEEZY_API_KEY;
+const entitlementRecordSchema = z.object({
+  email: z.string().email(),
+  status: z.enum(["active", "cancelled", "expired", "paused"]),
+  plan: z.string(),
+  source: z.literal("lemonsqueezy"),
+  updatedAt: z.string(),
+});
 
-  if (!apiKey || sdkConfigured) {
+const entitlementStoreSchema = z.record(entitlementRecordSchema);
+
+const lemonWebhookSchema = z.object({
+  meta: z.object({
+    event_name: z.string(),
+  }),
+  data: z.object({
+    attributes: z
+      .object({
+        user_email: z.string().email().optional(),
+        customer_email: z.string().email().optional(),
+        status: z.string().optional(),
+        product_name: z.string().optional(),
+        variant_name: z.string().optional(),
+      })
+      .passthrough(),
+  }),
+});
+
+type EntitlementStore = z.infer<typeof entitlementStoreSchema>;
+
+export interface LemonWebhookResult {
+  processed: boolean;
+  email?: string;
+}
+
+export function setupLemonSqueezyClient(): void {
+  const apiKey = process.env.LEMONSQUEEZY_API_KEY;
+
+  if (!apiKey) {
     return;
   }
 
-  lemonSqueezySetup({ apiKey });
-  sdkConfigured = true;
-}
-
-export function getLemonCheckoutUrl(): string | null {
-  const productId = process.env.NEXT_PUBLIC_LEMON_SQUEEZY_PRODUCT_ID;
-
-  if (!productId) {
-    return null;
-  }
-
-  const params = new URLSearchParams({
-    embed: "1",
-    logo: "0",
-    media: "0",
-    "checkout[custom][source]": "stripe-ban-preflight",
+  lemonSqueezySetup({
+    apiKey,
+    onError: (error) => {
+      console.error("LemonSqueezy SDK error:", error.message);
+    },
   });
-
-  return `https://checkout.lemonsqueezy.com/buy/${productId}?${params.toString()}`;
 }
 
-export function verifyLemonSignature(
-  rawBody: string,
-  signatureHeader: string | null,
-): boolean {
-  const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
+export function verifyLemonSqueezySignature(rawBody: string, signatureHeader: string | null): boolean {
+  const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
 
   if (!secret || !signatureHeader) {
     return false;
   }
 
-  const digest = crypto
-    .createHmac("sha256", secret)
-    .update(rawBody)
-    .digest("hex");
+  const digest = createHmac("sha256", secret).update(rawBody).digest("hex");
 
-  try {
-    return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signatureHeader));
-  } catch {
+  const signature = Buffer.from(signatureHeader, "utf8");
+  const expected = Buffer.from(digest, "utf8");
+
+  if (signature.length !== expected.length) {
     return false;
   }
+
+  return timingSafeEqual(signature, expected);
 }
 
-type LemonWebhookPayload = {
-  meta?: {
-    event_name?: string;
-  };
-  data?: {
-    id?: string;
-    attributes?: {
-      status?: string;
-      user_email?: string;
-      customer_email?: string;
-      first_order_item?: {
-        product_name?: string;
-      };
-    };
-  };
-};
+async function readEntitlements(): Promise<EntitlementStore> {
+  const raw = await readJsonFile<unknown>(ENTITLEMENTS_FILE, {});
+  const parsed = entitlementStoreSchema.safeParse(raw);
 
-export function extractPurchaseFromWebhook(
-  payload: LemonWebhookPayload,
-): PurchaseRecord | null {
-  const eventName = payload.meta?.event_name;
+  return parsed.success ? parsed.data : {};
+}
 
-  if (!eventName) {
-    return null;
+function mapStatus(eventName: string, webhookStatus?: string):
+  | "active"
+  | "cancelled"
+  | "expired"
+  | "paused" {
+  if (eventName.includes("cancel") || webhookStatus === "cancelled") {
+    return "cancelled";
   }
 
-  const attrs = payload.data?.attributes;
-  const email = attrs?.user_email ?? attrs?.customer_email;
+  if (eventName.includes("expired") || webhookStatus === "expired") {
+    return "expired";
+  }
+
+  if (webhookStatus === "paused") {
+    return "paused";
+  }
+
+  return "active";
+}
+
+export async function processLemonSqueezyWebhook(payload: unknown): Promise<LemonWebhookResult> {
+  const parsed = lemonWebhookSchema.safeParse(payload);
+
+  if (!parsed.success) {
+    return { processed: false };
+  }
+
+  const eventName = parsed.data.meta.event_name;
+  const attributes = parsed.data.data.attributes;
+  const email = attributes.user_email ?? attributes.customer_email;
 
   if (!email) {
-    return null;
+    return { processed: false };
   }
 
-  if (
-    eventName !== "order_created" &&
-    eventName !== "subscription_created" &&
-    eventName !== "subscription_payment_success"
-  ) {
-    return null;
-  }
+  const store = await readEntitlements();
 
-  const orderId = payload.data?.id ?? `${eventName}-${Date.now()}`;
+  store[email.toLowerCase()] = {
+    email: email.toLowerCase(),
+    status: mapStatus(eventName, attributes.status),
+    plan: [attributes.product_name, attributes.variant_name].filter(Boolean).join(" - ") || "Stripe Ban Preflight",
+    source: "lemonsqueezy",
+    updatedAt: new Date().toISOString(),
+  };
+
+  await writeJsonFile(ENTITLEMENTS_FILE, store);
 
   return {
-    email: email.toLowerCase().trim(),
-    orderId,
-    status: eventName === "order_created" ? "paid" : "active",
-    source: eventName === "order_created" ? "order" : "subscription",
-    createdAt: new Date().toISOString(),
+    processed: true,
+    email: email.toLowerCase(),
   };
+}
+
+export async function isEntitledByEmail(email: string): Promise<boolean> {
+  const store = await readEntitlements();
+  const record = store[email.toLowerCase()];
+
+  if (!record) {
+    return false;
+  }
+
+  return record.status === "active";
 }

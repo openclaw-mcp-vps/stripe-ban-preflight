@@ -1,283 +1,241 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import {
-  AlertTriangle,
+  AlertOctagon,
+  ArrowRight,
   BadgeCheck,
-  CircleDollarSign,
-  Radar,
+  BanknoteArrowDown,
+  Bot,
+  CreditCard,
   ShieldAlert,
-  Sparkles,
+  TimerReset,
 } from "lucide-react";
 
-import PricingCheckout from "@/components/PricingCheckout";
-import { ACCESS_COOKIE } from "@/lib/constants";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-const faq = [
+const painPoints = [
   {
-    question: "Does this get write access to my Stripe account?",
-    answer:
-      "No. OAuth scope is read-only. We cannot issue refunds, edit payouts, or modify account settings.",
+    icon: AlertOctagon,
+    title: "Bans hit without warning",
+    description:
+      "Most founders find out after payouts freeze. Revenue can vanish overnight while appeals drag on for weeks.",
   },
   {
-    question: "How often is the risk score updated?",
-    answer:
-      "Dashboard analysis refreshes automatically every 45 seconds and can be manually refreshed on demand.",
+    icon: BanknoteArrowDown,
+    title: "Chargebacks compound fast",
+    description:
+      "A short spike in disputes can quietly push your account into Stripe's high-risk review thresholds.",
   },
   {
-    question: "What does the score use under the hood?",
+    icon: TimerReset,
+    title: "Manual audits miss patterns",
+    description:
+      "Spreadsheet checks are too slow. You need a system that flags suspension signals in time to intervene.",
+  },
+];
+
+const solutionSteps = [
+  {
+    icon: CreditCard,
+    title: "Connect Stripe in read-only mode",
+    description:
+      "OAuth-based access pulls dispute, refund, and compliance signals without touching charges or customer data writes.",
+  },
+  {
+    icon: Bot,
+    title: "AI analyzes suspension triggers",
+    description:
+      "The engine scores chargeback velocity, payment-failure pressure, account requirement flags, and dispute reason trends.",
+  },
+  {
+    icon: ShieldAlert,
+    title: "Execute the top 3 fixes",
+    description:
+      "Get a prioritized action plan with impact level and exact operational changes to lower ban risk immediately.",
+  },
+];
+
+const faqs = [
+  {
+    question: "Is Stripe access truly read-only?",
     answer:
-      "Chargeback ratio, refunds, failed payment anomalies, policy keyword triggers, and Stripe account requirement signals.",
+      "Yes. The Connect OAuth flow requests `read_only` scope, so Stripe Ban Preflight can inspect account risk signals without creating or modifying transactions.",
   },
   {
     question: "Who is this built for?",
     answer:
-      "SaaS founders above $10k MRR and high-risk payment verticals where a Stripe suspension can halt revenue instantly.",
+      "SaaS teams above $10k MRR, subscription businesses with rising dispute volume, and higher-risk fintech-adjacent products.",
+  },
+  {
+    question: "How quickly do I get value?",
+    answer:
+      "Most accounts get an initial risk score and a ranked fix list in under two minutes after connecting Stripe.",
+  },
+  {
+    question: "What if I don't have historical data yet?",
+    answer:
+      "The dashboard still scores early warning signals from payment failures and account compliance posture, then improves as volume grows.",
   },
 ];
 
-export default async function HomePage() {
-  const hasAccess = (await cookies()).get(ACCESS_COOKIE)?.value === "granted";
-
+export default function HomePage() {
   return (
-    <main className="relative overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(88,166,255,0.24),transparent_38%),radial-gradient(circle_at_80%_0%,rgba(248,81,73,0.20),transparent_28%),linear-gradient(180deg,#0d1117_0%,#0d1117_40%,#121820_100%)]" />
+    <div className="relative isolate overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_10%,rgba(47,129,247,0.25),transparent_35%)]" />
 
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
-        <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#8b949e]">
-          Stripe Ban Preflight
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 lg:px-10">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/70 px-4 py-2 text-sm font-medium text-muted-foreground backdrop-blur-sm">
+          <BadgeCheck className="h-4 w-4 text-primary" />
+          fintech-risk
         </div>
-        <nav className="flex items-center gap-5 text-sm text-[#9ea7b3]">
-          <a href="#solution" className="transition hover:text-[#58a6ff]">
-            Solution
-          </a>
-          <a href="#pricing" className="transition hover:text-[#58a6ff]">
-            Pricing
-          </a>
-          <a href="#faq" className="transition hover:text-[#58a6ff]">
-            FAQ
-          </a>
-          <Link
-            href={hasAccess ? "/dashboard" : "#pricing"}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-[#c9d1d9] transition hover:border-[#58a6ff] hover:text-[#58a6ff]"
-          >
-            {hasAccess ? "Dashboard" : "Get access"}
-          </Link>
-        </nav>
+
+        <Link
+          href="/dashboard"
+          className={cn(
+            buttonVariants({ variant: "outline", size: "sm" }),
+            "border-border/80 bg-card/70 text-foreground hover:bg-card",
+          )}
+        >
+          Open Dashboard
+        </Link>
       </header>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-12 px-6 pb-20 pt-8 lg:grid-cols-[1.2fr,1fr]">
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-[#f0883e]/50 bg-[#f0883e]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.13em] text-[#f6b58c]">
-            <ShieldAlert className="h-3.5 w-3.5" />
-            Predict suspension risk before revenue freezes
-          </p>
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 pb-20 pt-8 lg:px-10">
+        <section className="grid gap-8 rounded-3xl border border-border/70 bg-card/60 p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm lg:grid-cols-[1.3fr_1fr] lg:p-10">
+          <div className="space-y-6">
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary uppercase">
+              Stripe Ban Preflight
+            </p>
 
-          <h1 className="mt-5 text-4xl font-bold tracking-tight text-[#f0f6fc] sm:text-5xl">
-            Stripe Ban Preflight helps you fix account risk before Stripe does.
-          </h1>
+            <h1 className="text-balance text-4xl leading-tight font-semibold tracking-tight text-foreground md:text-5xl">
+              Predict your Stripe suspension risk before it kills your revenue.
+            </h1>
 
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#9ea7b3]">
-            Connect Stripe in read-only mode. We analyze chargebacks, dispute velocity,
-            payment failure patterns, and policy flags to produce a suspension risk score plus
-            the three fixes most likely to reduce enforcement risk this week.
-          </p>
+            <p className="max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
+              Connect Stripe in read-only mode. We analyze chargebacks, disputes, and compliance signals,
+              then return a suspension risk score with the top 3 fixes your team should ship first.
+            </p>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <Stat title="< 2 min" subtitle="Connect + first score" />
-            <Stat title="45 sec" subtitle="Auto refresh interval" />
-            <Stat title="Top 3" subtitle="Prioritized remediation actions" />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <a
+                href={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? ""}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "justify-center gap-2 rounded-xl bg-primary px-6 text-primary-foreground hover:bg-primary/90",
+                )}
+              >
+                Start for $19/mo
+                <ArrowRight className="h-4 w-4" />
+              </a>
+
+              <Link
+                href="/dashboard"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "justify-center rounded-xl border-border/80 bg-card/70 text-foreground hover:bg-card",
+                )}
+              >
+                View Product Dashboard
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div id="pricing" className="rounded-2xl border border-white/10 bg-[#161b22]/90 p-6 backdrop-blur">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-[#f0f6fc]">Founder Plan</h2>
-            <span className="rounded-full bg-[#1f6feb]/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#58a6ff]">
-              fintech-risk
-            </span>
+          <div className="rounded-2xl border border-border/80 bg-background/70 p-6">
+            <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+              What You Get Every Scan
+            </h2>
+            <ul className="space-y-4 text-sm text-foreground">
+              <li>
+                <span className="font-semibold text-primary">Suspension Risk Score:</span> A single number from
+                1 to 99 so your team can trend risk weekly.
+              </li>
+              <li>
+                <span className="font-semibold text-primary">Trigger Breakdown:</span> Chargeback ratio,
+                payment-failure pressure, and compliance alerts in one view.
+              </li>
+              <li>
+                <span className="font-semibold text-primary">Top 3 Fixes:</span> Prioritized actions with impact
+                and execution detail, ready for ops and product owners.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <h2 className="text-3xl font-semibold tracking-tight">Why founders get suspended</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {painPoints.map(({ icon: Icon, title, description }) => (
+              <article
+                key={title}
+                className="rounded-2xl border border-border/70 bg-card/55 p-6 shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+              >
+                <Icon className="mb-4 h-5 w-5 text-primary" />
+                <h3 className="mb-2 text-lg font-semibold">{title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <h2 className="text-3xl font-semibold tracking-tight">How Stripe Ban Preflight works</h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            {solutionSteps.map(({ icon: Icon, title, description }) => (
+              <article key={title} className="rounded-2xl border border-border/70 bg-card/55 p-6">
+                <Icon className="mb-4 h-5 w-5 text-primary" />
+                <h3 className="mb-2 text-lg font-semibold">{title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-6 rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-card/70 to-card/50 p-8 lg:grid-cols-[1.2fr_1fr] lg:p-10">
+          <div className="space-y-4">
+            <h2 className="text-3xl font-semibold tracking-tight">Simple pricing for high-stakes risk</h2>
+            <p className="max-w-xl text-muted-foreground">
+              One plan for teams that care about continuity: monitor suspension signals, run weekly risk checks,
+              and ship the most critical fixes before Stripe review action hits.
+            </p>
           </div>
 
-          <p className="mt-2 text-sm text-[#9ea7b3]">
-            For SaaS teams where Stripe uptime is mission-critical.
-          </p>
-
-          <div className="mt-4 flex items-end gap-2">
-            <span className="text-4xl font-bold text-[#f0f6fc]">$19</span>
-            <span className="pb-1 text-sm text-[#9ea7b3]">/month</span>
-          </div>
-
-          <ul className="mt-5 space-y-2 text-sm text-[#c9d1d9]">
-            <Feature>Live suspension risk score dashboard</Feature>
-            <Feature>Dispute and chargeback pattern detection</Feature>
-            <Feature>AI compliance analysis (OpenAI/Anthropic)</Feature>
-            <Feature>Top 3 fixes ranked by expected impact</Feature>
-          </ul>
-
-          <div className="mt-6">
-            <PricingCheckout isUnlocked={hasAccess} />
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-white/10 bg-[#11161d]/70 py-14">
-        <div className="mx-auto grid w-full max-w-6xl gap-6 px-6 md:grid-cols-3">
-          <ProblemCard
-            icon={<AlertTriangle className="h-5 w-5 text-[#f85149]" />}
-            title="No warning until it is too late"
-            description="Suspensions usually arrive after a pattern has already crossed internal thresholds."
-          />
-          <ProblemCard
-            icon={<CircleDollarSign className="h-5 w-5 text-[#f0883e]" />}
-            title="Payout interruptions crush runway"
-            description="A frozen account can cut cash flow overnight for growth-stage SaaS businesses."
-          />
-          <ProblemCard
-            icon={<Radar className="h-5 w-5 text-[#58a6ff]" />}
-            title="Teams lack proactive monitoring"
-            description="Most founders only inspect Stripe after a dispute spike or reserve notice."
-          />
-        </div>
-      </section>
-
-      <section id="solution" className="mx-auto w-full max-w-6xl px-6 py-16">
-        <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#58a6ff]">
-            How it works
-          </p>
-          <h2 className="mt-2 text-3xl font-bold text-[#f0f6fc]">
-            Read-only Stripe telemetry translated into a clear risk plan.
-          </h2>
-        </div>
-
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          <SolutionCard
-            step="1"
-            title="Connect Stripe"
-            detail="OAuth read-only permissions pull disputes, charges, and account health signals safely."
-          />
-          <SolutionCard
-            step="2"
-            title="Model + AI analysis"
-            detail="Rules engine scores enforcement risk while OpenAI/Anthropic expands contextual recommendations."
-          />
-          <SolutionCard
-            step="3"
-            title="Fix highest-impact gaps"
-            detail="Prioritized actions focus on dispute reduction, policy clarity, and payment hygiene in 7 days."
-          />
-        </div>
-      </section>
-
-      <section className="mx-auto grid w-full max-w-6xl gap-6 px-6 pb-16 md:grid-cols-3">
-        <HighlightCard
-          icon={<BadgeCheck className="h-5 w-5 text-[#2ea043]" />}
-          title="Actionable, not vanity metrics"
-          detail="Every recommendation includes why it matters and what to change in operations or checkout flows."
-        />
-        <HighlightCard
-          icon={<Sparkles className="h-5 w-5 text-[#58a6ff]" />}
-          title="Built for high-MRR SaaS"
-          detail="Optimized for founder teams that cannot afford payment downtime or payout uncertainty."
-        />
-        <HighlightCard
-          icon={<ShieldAlert className="h-5 w-5 text-[#f0883e]" />}
-          title="Preflight before enforcement"
-          detail="See trouble early enough to remediate before Stripe forces reserves or account restrictions."
-        />
-      </section>
-
-      <section id="faq" className="mx-auto w-full max-w-4xl px-6 pb-20">
-        <h2 className="text-2xl font-bold text-[#f0f6fc]">FAQ</h2>
-        <div className="mt-5 space-y-3">
-          {faq.map((item) => (
-            <article
-              key={item.question}
-              className="rounded-xl border border-white/10 bg-[#161b22] p-4"
+          <div className="rounded-2xl border border-border/80 bg-background/75 p-6">
+            <p className="text-sm text-muted-foreground">Growth Plan</p>
+            <p className="mt-2 text-4xl font-semibold">$19<span className="text-xl text-muted-foreground">/mo</span></p>
+            <ul className="mt-4 space-y-2 text-sm text-foreground">
+              <li>Read-only Stripe risk monitoring</li>
+              <li>AI-generated suspension score</li>
+              <li>Top 3 weekly mitigation recommendations</li>
+              <li>Webhook-driven risk event tracking</li>
+            </ul>
+            <a
+              href={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK ?? ""}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "mt-6 flex w-full justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90",
+              )}
             >
-              <h3 className="text-sm font-semibold text-[#f0f6fc]">{item.question}</h3>
-              <p className="mt-2 text-sm text-[#9ea7b3]">{item.answer}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-    </main>
-  );
-}
+              Buy with Stripe Checkout
+            </a>
+          </div>
+        </section>
 
-function Stat({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-[#161b22] p-4">
-      <p className="text-2xl font-semibold text-[#f0f6fc]">{title}</p>
-      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#8b949e]">{subtitle}</p>
+        <section className="space-y-6 pb-8">
+          <h2 className="text-3xl font-semibold tracking-tight">FAQ</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {faqs.map((faq) => (
+              <article key={faq.question} className="rounded-2xl border border-border/70 bg-card/55 p-6">
+                <h3 className="mb-2 text-base font-semibold text-foreground">{faq.question}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{faq.answer}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
-  );
-}
-
-function Feature({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-2">
-      <span className="mt-1 h-2 w-2 rounded-full bg-[#2ea043]" />
-      <span>{children}</span>
-    </li>
-  );
-}
-
-function ProblemCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <article className="rounded-xl border border-white/10 bg-[#161b22] p-5">
-      <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">
-        {icon}
-      </div>
-      <h3 className="mt-3 text-lg font-semibold text-[#f0f6fc]">{title}</h3>
-      <p className="mt-2 text-sm text-[#9ea7b3]">{description}</p>
-    </article>
-  );
-}
-
-function SolutionCard({
-  step,
-  title,
-  detail,
-}: {
-  step: string;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <article className="rounded-xl border border-white/10 bg-[#161b22] p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#58a6ff]">
-        Step {step}
-      </p>
-      <h3 className="mt-2 text-lg font-semibold text-[#f0f6fc]">{title}</h3>
-      <p className="mt-2 text-sm text-[#9ea7b3]">{detail}</p>
-    </article>
-  );
-}
-
-function HighlightCard({
-  icon,
-  title,
-  detail,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  detail: string;
-}) {
-  return (
-    <article className="rounded-xl border border-white/10 bg-[#161b22] p-5">
-      <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white/5">
-        {icon}
-      </div>
-      <h3 className="mt-3 text-lg font-semibold text-[#f0f6fc]">{title}</h3>
-      <p className="mt-2 text-sm text-[#9ea7b3]">{detail}</p>
-    </article>
   );
 }

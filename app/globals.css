@@ -1,36 +1,84 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.75);
+  --radius-md: calc(var(--radius) * 0.9);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-jetbrains-mono);
+}
 
 :root {
   --background: #0d1117;
-  --surface: #161b22;
-  --surface-muted: #11161d;
-  --foreground: #e6edf3;
-  --muted: #9ea7b3;
-  --accent: #58a6ff;
+  --foreground: #f0f6fc;
+  --card: #151b23;
+  --card-foreground: #f0f6fc;
+  --popover: #10161e;
+  --popover-foreground: #f0f6fc;
+  --primary: #2f81f7;
+  --primary-foreground: #f8fbff;
+  --secondary: #1f2733;
+  --secondary-foreground: #e6edf3;
+  --muted: #1b232f;
+  --muted-foreground: #9fb0c3;
+  --accent: #243244;
+  --accent-foreground: #d8e4f3;
+  --destructive: #f85149;
+  --border: #2d3745;
+  --input: #263241;
+  --ring: #5ba2ff;
+  --radius: 0.9rem;
 }
 
-* {
-  border-color: rgb(255 255 255 / 0.08);
+.dark {
+  --background: #0d1117;
+  --foreground: #f0f6fc;
 }
 
-html,
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-}
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
 
-body {
-  font-family: var(--font-space-grotesk), "Segoe UI", sans-serif;
-}
+  html,
+  body {
+    @apply min-h-full;
+    background-color: #0d1117;
+    color: var(--foreground);
+  }
 
-code,
-kbd,
-pre,
-samp {
-  font-family: var(--font-ibm-plex-mono), "SFMono-Regular", Menlo, monospace;
-}
+  html {
+    color-scheme: dark;
+    font-family: var(--font-space-grotesk), sans-serif;
+  }
 
-::selection {
-  background-color: rgb(88 166 255 / 0.35);
-  color: #ffffff;
+  body {
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(47, 129, 247, 0.24) 0%, transparent 35%),
+      radial-gradient(circle at 95% 15%, rgba(88, 166, 255, 0.14) 0%, transparent 30%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0) 35%);
+  }
 }
